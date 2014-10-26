@@ -15,21 +15,7 @@
 
 #include <cstdlib>
 
-class NanoTimer
-{
-public:
-    NanoTimer();
-    ~NanoTimer();
-
-    typedef long long int NanoClock;
-
-    static const NanoClock NANO_TIME_BASE = 1000LL * 1000LL * 1000LL;
-
-    NanoClock clock();
-
-private:
-    unsigned long _freq;
-};
+#include "nanotimer.h"
 
 NanoTimer::NanoTimer()
 {
