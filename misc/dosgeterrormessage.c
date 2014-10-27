@@ -46,17 +46,3 @@ const char *DosGetErrorMessage( int errnum, char *buffer, size_t n )
 
     return buffer;
 }
-
-#include <stdio.h>
-
-#define ERROR_CODE  3175
-
-int main( void )
-{
-    char buf[ 512 ];
-
-    printf("Error message for error code %d :\n%s\n",
-           ERROR_CODE, DosGetErrorMessage( ERROR_CODE, buf, sizeof( buf )));
-
-    return 0;
-}

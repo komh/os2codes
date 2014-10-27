@@ -24,7 +24,7 @@ DIRS := misc time signal
 SRCS := $(foreach d,$(DIRS),$(wildcard $(d)/*.c) $(wildcard $(d)/*.cpp))
 DEPS := $(foreach s,$(SRCS),$(s:$(suffix $(s))=.d))
 OBJS := $(DEPS:.d=.o)
-EXES := $(OBJS:.o=.exe)
+EXES := $(addsuffix .exe,$(filter %-test,$(basename $(SRCS))))
 
 %.d : %.c
 	$(CC) $(CFLAGS) -MM -MP -MT "$(@:.d=.o) $@" -MF $@ $<
@@ -38,7 +38,7 @@ EXES := $(OBJS:.o=.exe)
 %.o : %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-%.exe : %.o
+%-test.exe : %-test.o %.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 .PHONY : all clean

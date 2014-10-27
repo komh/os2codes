@@ -64,26 +64,3 @@ void uninstallSigfpeHandler( EXCEPTIONREGISTRATIONRECORD *pregRec )
 {
     DosUnsetExceptionHandler( pregRec );
 }
-
-#include <stdio.h>
-#include <float.h>
-
-int main(void)
-{
-    EXCEPTIONREGISTRATIONRECORD regRec;
-    float f, f2;
-
-    // mask on all exceptions
-    _control87( 0, MCW_EM );
-
-    installSigfpeHandler( &regRec );
-
-    f2 = 1.5;
-    f = .0;
-    f = f2 / f;
-    printf("f = %f\n", f );
-
-    uninstallSigfpeHandler( &regRec );
-
-    return 0;
-}

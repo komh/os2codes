@@ -46,23 +46,3 @@ NanoTimer::NanoClock NanoTimer::clock()
 
     return (ns.quot * NANO_TIME_BASE + (ns.rem * NANO_TIME_BASE) / _freq);
 }
-
-#include <iostream>
-
-int main()
-{
-    NanoTimer nt;
-    NanoTimer::NanoClock start;
-    NanoTimer::NanoClock end;
-
-    start = nt.clock();
-    DosSleep(100);
-    end = nt.clock();
-
-    std::cout << "Start time = " << start << " ns\n";
-    std::cout << "End time = " << end << " ns\n";
-    std::cout << "Duration time = " << ((end - start) / 1000.f / 1000.f)
-              << " ms\n";
-
-    return 0;
-}
