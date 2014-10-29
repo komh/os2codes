@@ -20,7 +20,7 @@ CXXFLAGS := -Wall
 LDFLAGS  :=
 LDLIBS   :=
 
-DIRS := misc time signal
+DIRS := misc time signal system
 SRCS := $(foreach d,$(DIRS),$(wildcard $(d)/*.c) $(wildcard $(d)/*.cpp))
 DEPS := $(foreach s,$(SRCS),$(s:$(suffix $(s))=.d))
 OBJS := $(DEPS:.d=.o)
