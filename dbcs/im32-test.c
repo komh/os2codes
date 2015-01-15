@@ -573,16 +573,16 @@ static MRESULT WmPaint( HWND hwnd, MPARAM mp1, MPARAM mp2 )
         GpiCharString( hps, pIm32Data->selStart, pIm32Data->szConv );
 
         /* Invert colors for a selection part */
-        GpiSetColor( hps, CLR_BACKGROUND/*SYSCLR_WINDOW*/ );
-        GpiSetBackColor( hps, CLR_DEFAULT/*SYSCLR_WINDOWTEXT*/ );
+        GpiSetColor( hps, SYSCLR_WINDOW );
+        GpiSetBackColor( hps, SYSCLR_WINDOWTEXT );
 
         /* Display a conversion string in a selection part */
         GpiCharString( hps, pIm32Data->selLength,
                        pIm32Data->szConv + pIm32Data->selStart );
 
         /* Restore colors */
-        GpiSetColor( hps, CLR_DEFAULT/*SYSCLR_WINDOWTEXT*/ );
-        GpiSetBackColor( hps, CLR_BACKGROUND/*SYSCLR_WINDOW*/ );
+        GpiSetColor( hps, SYSCLR_WINDOWTEXT );
+        GpiSetBackColor( hps, SYSCLR_WINDOW );
 
         /* Display a conversion string after a selection part */
         GpiCharString( hps,
