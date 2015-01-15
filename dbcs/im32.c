@@ -15,6 +15,8 @@
 #include <os2im.h>
 #include <os2ime.h>
 
+#include "im32.h"
+
 typedef APIRET ( APIENTRY *PFN_IMASSOCIATEINSTANCE )
                     ( HWND hwnd, HIMI himi, PHIMI phimiPrev );
 
@@ -550,6 +552,16 @@ DESTRUCTOR VOID im32Term( VOID )    /* Called at exit if supported */
     DosFreeModule( hIM32Mod );
 
     fIM32Inited = FALSE;
+}
+
+/**
+ * Check if IM32 was initialized
+ *
+ * @return TRUE on initialized, otherwise FALSE
+ */
+BOOL im32Inited( VOID )
+{
+    return fIM32Inited;
 }
 
 APIRET APIENTRY ImAssociateInstance( HWND hwnd, HIMI himi, PHIMI phimiPrev )
