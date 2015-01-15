@@ -326,13 +326,20 @@ static PFN_IMBROADCASTDATA pfnImBroadcastData = NULL;
 #define DOSQUERYPROCADDR( ordinal, ppfn ) \
     DosQueryProcAddr( hIM32Mod, ordinal, NULL, ( PFN * )( ppfn ))
 
+#ifdef __GNUC__
+#define CONSTRUCTOR __attribute__((constructor))
+#define DESTRUCTOR  __attribute__((destructor))
+#else
+#define CONSTRUCTOR
+#define DESTRUCTOR
+#endif
+
 /**
  * Load OS2IM module and initialize internal function pointers
  *
  * @return TRUE on success, or FALSE on error
  */
-__attribute__((constructor))    /* Called at startup */
-static BOOL im32Init( VOID )
+CONSTRUCTOR BOOL im32Init( VOID )   /* Called at startup if supported */
 {
     UCHAR szErrorName[ 256 ];
 
@@ -535,8 +542,7 @@ error_exit:
 /**
  * Free OS2IM module and clean up
  */
-__attribute__((destructor))    /* Called at exit */
-static VOID im32Term( VOID )
+DESTRUCTOR VOID im32Term( VOID )    /* Called at exit if supported */
 {
     if( !fIM32Inited )
         return;
