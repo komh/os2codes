@@ -564,6 +564,7 @@ static MRESULT WmPaint( HWND hwnd, MPARAM mp1, MPARAM mp2 )
     /* Display a result string before a conversion string */
     GpiCharString( hps, pIm32Data->curPos, pIm32Data->szResult );
 
+    /* Conversion string ? */
     if( pIm32Data->szConv[ 0 ])
     {
         /* Save a current position for a conversion string */
