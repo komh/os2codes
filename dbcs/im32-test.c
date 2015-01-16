@@ -299,6 +299,9 @@ static MRESULT WmImeRequest( HWND hwnd, MPARAM mp1, MPARAM mp2 )
                conversion window of IME itself shows up at the same time */
             return FALSE;   /* Not processed */
         }
+
+        /* Pass other messages to a default window procedure. Especially,
+           IMR_INSTANCEACTIVATE and IMR_CANDIDATE let IME process a candidate part */
     }
 
     return WinDefWindowProc( hwnd, WM_IMEREQUEST, mp1, mp2 );
