@@ -20,7 +20,7 @@ CXXFLAGS := -Wall
 LDFLAGS  :=
 LDLIBS   :=
 
-DIRS := misc time signal system dbcs memory
+DIRS := misc time signal system dbcs memory process
 SRCS := $(foreach d,$(DIRS),$(wildcard $(d)/*.c) $(wildcard $(d)/*.cpp))
 DEPS := $(foreach s,$(SRCS),$(s:$(suffix $(s))=.d))
 OBJS := $(DEPS:.d=.o)
