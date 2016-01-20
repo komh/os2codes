@@ -48,23 +48,11 @@ static void initCharLen( void )
     }
 }
 
-/**
- * Test if DBCS is enabled
- *
- * @return non-zero on enabled, otherwise 0 on disabled
- */
 int dbcsIsEnabled( void )
 {
     return m_fIsEnabled;
 }
 
-/**
- * Calculate a length of a string containing DBCS characters
- *
- * @param[in] str a string containing DBCS characters
- *
- * @return a length of a string pointed by @a str
- */
 int dbcsStrlen( const char *str )
 {
     const char *p;
@@ -83,14 +71,6 @@ int dbcsStrlen( const char *str )
     return len;
 }
 
-/**
- * Check if a chracter at @a pos of @a str is a DBCS lead byte
- *
- * @param[in] str a string containing DBCS characters
- * @param[in] pos a index of @a str
- *
- * @return 1 if DBCS lead byte, or 0 if SBCS
- */
 int dbcsIsLeadByte( const char *str, int pos )
 {
     const char *end = str + pos;
@@ -103,14 +83,6 @@ int dbcsIsLeadByte( const char *str, int pos )
     return str == end && GET_CHAR_LEN( *str ) == 2;
 }
 
-/**
- * Check if a character at @a pos of @a str is a DBCS lead byte
- *
- * @param[in] str a string containing DBCS characters
- * @param[in] pos a index of @a str
- *
- * @return 1 if DBCS lead byte, otherwise 0
- */
 int dbcsIsTrailByte( const char *str, int pos )
 {
     const char *end = str + pos;
