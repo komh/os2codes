@@ -10,6 +10,8 @@
  * http://www.wtfpl.net/ for more details.
  */
 
+/** @file sigfpe.h */
+
 #ifndef OS2CODES_SIGFPE_H
 #define OS2CODES_SIGFPE_H
 
@@ -19,7 +21,18 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Install SIGFPE handler
+ * @param[in] pregRec A pointer to the exception registration record to be
+ * registerd. This exception registration record must be on the stack
+ */
 void installSigfpeHandler( EXCEPTIONREGISTRATIONRECORD *pregRec );
+
+/**
+ * @brief Uninstall SIGFPE handler
+ * @param[in] pregRec A pointer to the exception registration record to be
+ * registerd.
+ */
 void uninstallSigfpeHandler( EXCEPTIONREGISTRATIONRECORD *pregRec );
 
 #ifdef __cplusplus
