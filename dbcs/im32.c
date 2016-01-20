@@ -336,11 +336,6 @@ static PFN_IMBROADCASTDATA pfnImBroadcastData = NULL;
 #define DESTRUCTOR
 #endif
 
-/**
- * Load OS2IM module and initialize internal function pointers
- *
- * @return TRUE on success, or FALSE on error
- */
 CONSTRUCTOR int im32Init( VOID )   /* Called at startup if supported */
 {
     UCHAR szErrorName[ 256 ];
@@ -541,9 +536,6 @@ error_exit:
     return fIM32Inited;
 }
 
-/**
- * Free OS2IM module and clean up
- */
 DESTRUCTOR void im32Term( void )    /* Called at exit if supported */
 {
     if( !fIM32Inited )
@@ -554,11 +546,6 @@ DESTRUCTOR void im32Term( void )    /* Called at exit if supported */
     fIM32Inited = FALSE;
 }
 
-/**
- * Check if IM32 was initialized
- *
- * @return TRUE on initialized, otherwise FALSE
- */
 int im32Inited( void )
 {
     return fIM32Inited;

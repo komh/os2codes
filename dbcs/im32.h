@@ -10,6 +10,8 @@
  * http://www.wtfpl.net/ for more details.
  */
 
+/** @im32.h */
+
 #ifndef OS2CODES_IM32_H
 #define OS2CODES_IM32_H
 
@@ -17,8 +19,23 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Initialize IM32 dynamic loader
+ * @return Non-zero on success, otherwise 0
+ * @remark If using gcc, this function is called at startup, automatically
+ */
 int im32Init( void );
+
+/**
+ * @brief Terminate IM32 dynamic loader
+ * @remark If using gcc, this function is called at exit, automatically
+ */
 void im32Term( void );
+
+/**
+ * @brief Check if IM32 was initialized
+ * @return Non-zero if initialized, otherwise 0
+ */
 int im32Inited( void );
 
 #ifdef __cplusplus
