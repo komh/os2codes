@@ -13,15 +13,13 @@
 #ifndef OS2CODES_IM32_H
 #define OS2CODES_IM32_H
 
-#include <os2.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-BOOL im32Init( VOID );
-VOID im32Term( VOID );
-BOOL im32Inited( VOID );
+int im32Init( void );
+void im32Term( void );
+int im32Inited( void );
 
 #ifdef __cplusplus
 }

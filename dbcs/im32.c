@@ -341,7 +341,7 @@ static PFN_IMBROADCASTDATA pfnImBroadcastData = NULL;
  *
  * @return TRUE on success, or FALSE on error
  */
-CONSTRUCTOR BOOL im32Init( VOID )   /* Called at startup if supported */
+CONSTRUCTOR int im32Init( VOID )   /* Called at startup if supported */
 {
     UCHAR szErrorName[ 256 ];
 
@@ -544,7 +544,7 @@ error_exit:
 /**
  * Free OS2IM module and clean up
  */
-DESTRUCTOR VOID im32Term( VOID )    /* Called at exit if supported */
+DESTRUCTOR void im32Term( void )    /* Called at exit if supported */
 {
     if( !fIM32Inited )
         return;
@@ -559,7 +559,7 @@ DESTRUCTOR VOID im32Term( VOID )    /* Called at exit if supported */
  *
  * @return TRUE on initialized, otherwise FALSE
  */
-BOOL im32Inited( VOID )
+int im32Inited( void )
 {
     return fIM32Inited;
 }
