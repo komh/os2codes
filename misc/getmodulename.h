@@ -10,6 +10,8 @@
  * http://www.wtfpl.net/ for more details.
  */
 
+/** @file getmodulename.h */
+
 #ifndef OS2CODES_GETMODULENAME_H
 #define OS2CODES_GETMODULENAME_H
 
@@ -19,6 +21,14 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Get a module name from a symbol @a pSymbol
+ * @param[in] pSymvol An address of a symbol to retrive a module name from
+ * @param[out] pszModName Place to store a module name
+ * @param[in] cbModName Size of the buffer pointed by @a pszModName
+ * @return Module handle on success, otherwise NULL
+ * @remark It's possible to cast return value to HMODULE
+ */
 void *getModuleName( void *pSymbol, char *pszModName, size_t cbModName );
 
 #ifdef __cplusplus
