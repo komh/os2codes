@@ -23,9 +23,7 @@
 
 int setProcessCp( int cp, int inherit )
 {
-    char *primaryCp = getenv( WORKPLACE_PRIMARY_CP );
-
-    if( inherit == CP_INHERIT && primaryCp
+    if( inherit == CP_INHERIT && getenv( WORKPLACE_PRIMARY_CP )
         && putenv( WORKPLACE_PRIMARY_CP "=?") != 0 )
         return -1;
 
