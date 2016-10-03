@@ -20,25 +20,22 @@ extern "C" {
 #endif
 
 /**
- * @def cpInherit Code page inheritance flag
+ * @def cpSet Code page setting flag
  * @{ */
-/** Make sure that a current code page is inherited by a child process */
-#define CP_INHERIT    1
+/** Set a current code page to a primary code page */
+#define CP_SET_PRIMARY  0
 
-/**
- * Let a system determine whether or not a current code page is inherited by
- * a child process
- */
-#define CP_NOINHERIT  0
+/** Set a current code page to a secondary code page */
+#define CP_SET_SECONDARY 1
 /* @} */
 
 /**
  * @brief Set a current code page
- * @param[in] cp New code page
- * @param[in] inherit A code page inheritance flag. See @ref cpInherit
+ * @param[in] cp New code page. A country code page or @ref cpSet flag
  * @return 0 on success, otherwise -1 with setting errno
+ * @remark A child process will inherits a new code page
  */
-int setProcessCp( int cp, int inherit );
+int setProcessCp( int cp );
 
 #ifdef __cplusplus
 }

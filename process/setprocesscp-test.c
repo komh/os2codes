@@ -46,9 +46,11 @@ int main( int argc, char *argv[])
     DosQueryCp( sizeof( aulCp ), aulCp, &cbCp );
 
     printf("Current code page = %ld\n", aulCp[ 0 ]);
-    printf("Set a code page to %ld\n", aulCp[ 2 ]);
+    printf("Primary code page = %ld\n", aulCp[ 1 ]);
+    printf("Secondary code page = %ld\n", aulCp[ 2 ]);
 
-    setProcessCp( aulCp[ 2 ], CP_INHERIT );
+    printf("Set a code page to a secondary code page\n");
+    setProcessCp( CP_SET_SECONDARY );
 
     return spawnlp( P_WAIT, argv[ 0 ], argv[ 0 ], SIGNATURE, NULL );
 }

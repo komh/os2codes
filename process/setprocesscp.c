@@ -21,11 +21,24 @@
 
 #define WORKPLACE_PRIMARY_CP "WORKPLACE_PRIMARY_CP"
 
-int setProcessCp( int cp, int inherit )
+int setProcessCp( int cp )
 {
-    if( inherit == CP_INHERIT && getenv( WORKPLACE_PRIMARY_CP )
-        && putenv( WORKPLACE_PRIMARY_CP "=?") != 0 )
+    /* Set WORKPLACE_PRIMARY_CP to make suare that a child inherits a current
+       code page */
+    if( getenv( WORKPLACE_PRIMARY_CP )
+        && putenv( WORKPLACE_PRIMARY_CP "=?") == -1 )
         return -1;
+
+    /* Convert CP_SET_xxxx to a real code page */
+    if( cp <= CP_SET_SECONDARY )
+    {
+        ULONG aulCp[ 3 ];
+        ULONG cbCp;
+
+        DosQueryCp( sizeof( aulCp ), aulCp, &cbCp );
+
+        cp = aulCp[ cp + 1 ];
+    }
 
     if( DosSetProcessCp( cp ) != NO_ERROR )
     {
