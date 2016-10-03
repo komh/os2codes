@@ -21,7 +21,7 @@
 
 #define SIGNATURE "!@#CHILD_SIGNATURE#@!"
 
-int child()
+int child( void )
 {
     ULONG ulCurrentCp;
     ULONG cbCp;
