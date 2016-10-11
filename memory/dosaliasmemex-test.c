@@ -86,7 +86,7 @@ int main( void )
     if( pAlias2 )
     {
         rc = DosFreeMem( pAlias2 );
-        fprintf( stderr, "DosFreeMem( pAlias2 ) = %ld\, pAlias2 = %p\n",
+        fprintf( stderr, "DosFreeMem( pAlias2 ) = %ld, pAlias2 = %p\n",
                  rc, pAlias2 );
         fFailed |= rc;
     }
