@@ -18,7 +18,12 @@
     new_argv[new_argc++] = x; \
   } while (0)
 
-void lresponse (int *argcp, char ***argvp)
+/**
+ * Replacement of _response() of kLIBC
+ *
+ * Read a response file without a line length limitation.
+ */
+void _response (int *argcp, char ***argvp)
 {
   int i, old_argc, new_argc, new_alloc;
   char **old_argv, **new_argv;

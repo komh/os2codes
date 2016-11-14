@@ -1,5 +1,5 @@
 /*
- * lresponse() test program
+ * _response() test program
  *
  * Copyright (C) 2016 KO Myung-Hun <komh@chollian.net>
  *
@@ -11,14 +11,13 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <process.h>
 
-#include "lresponse.h"
-
 #define LINE_LENGTH ( 1000 * 1000 )
 
-#define RESPONSE_NAME "lresponse.rsp"
+#define RESPONSE_NAME "_response.rsp"
 
 static void spawn( const char *prog )
 {
@@ -45,7 +44,7 @@ static void spawn( const char *prog )
 
 int main( int argc, char *argv[])
 {
-    lresponse( &argc, &argv );
+    _response( &argc, &argv );
 
     if( argc > 1 )
     {
