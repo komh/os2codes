@@ -37,10 +37,10 @@ typedef struct _MEMORYLIST
 } MEMORYLIST, *PMEMORYLIST;
 
 /** Pointer to the start of memory list. */
-static PMEMORYLIST pmlStart = NULL;
+static PMEMORYLIST m_pmlStart = NULL;
 
 /** DosFreeMem() of DOSCALLS */
-static APIRET APIENTRY ( *os2_DosFreeMem )( PVOID ) = NULL;
+static APIRET APIENTRY ( *m_os2_DosFreeMem )( PVOID ) = NULL;
 
 /**
  * Reallocate destination memory
@@ -58,10 +58,10 @@ static bool reallocDestMem( const void *pStart, const void *pEnd, bool flDest )
     bool flProcessed = false;
 
     PMEMORYLIST pml;
-    PMEMORYLIST *pmlNext = &pmlStart;
+    PMEMORYLIST *pmlNext = &m_pmlStart;
 
     /* Find releated memory list and perform copy */
-    for( pml = pmlStart; pml; pml = *pmlNext )
+    for( pml = m_pmlStart; pml; pml = *pmlNext )
     {
         pAddrStart = flDest ? pml->pDest : pml->pSrc;
         pAddrEnd = ( char * )pAddrStart + pml->cb;
@@ -80,7 +80,7 @@ static bool reallocDestMem( const void *pStart, const void *pEnd, bool flDest )
                  * Reallocate memory at current address and copy from source
                  * memory
                  */
-                if( os2_DosFreeMem( pml->pDest ))
+                if( m_os2_DosFreeMem( pml->pDest ))
                     break;
 
                 if( DosAllocMemEx( &pml->pDest, pml->cb,
@@ -153,10 +153,10 @@ static ULONG _System sigsegv( PEXCEPTIONREPORTRECORD p1,
 }
 
 /** __init_app() of kLIBC. */
-static void ( *klibc___init_app )( void ) = NULL;
+static void ( *m_klibc___init_app )( void ) = NULL;
 
 /** _beginthread() of kLIBC. */
-static int ( *klibc__beginthread )
+static int ( *m_klibc__beginthread )
     ( void ( * )( void * ), void *, unsigned, void * ) = NULL;
 
 /**
@@ -171,11 +171,12 @@ static void loadKLibcFuncs( void )
     if( DosLoadModule( szFailed, sizeof( szFailed ), "libc066", &hmod ))
         DosExit( EXIT_PROCESS, 255 );
 
-    if( DosQueryProcAddr( hmod, 0, "___init_app", ( PFN * )&klibc___init_app ))
+    if( DosQueryProcAddr( hmod, 0, "___init_app",
+                        ( PFN * )&m_klibc___init_app ))
         DosExit( EXIT_PROCESS, 255 );
 
     if( DosQueryProcAddr( hmod, 0, "__beginthread",
-                          ( PFN * )&klibc__beginthread ))
+                          ( PFN * )&m_klibc__beginthread ))
         DosExit( EXIT_PROCESS, 255 );
 }
 
@@ -191,7 +192,7 @@ static void loadOS2Funcs( void )
     if( DosLoadModule( szFailed, sizeof( szFailed ), "doscalls", &hmod ))
         DosExit( EXIT_PROCESS, 255 );
 
-    if( DosQueryProcAddr( hmod, 304, NULL, ( PFN * )&os2_DosFreeMem ))
+    if( DosQueryProcAddr( hmod, 304, NULL, ( PFN * )&m_os2_DosFreeMem ))
         DosExit( EXIT_PROCESS, 255 );
 }
 
@@ -216,7 +217,7 @@ typedef struct _STACKFRAME
 } STACKFRAME, *PSTACKFRAME;
 
 __attribute__(( unused ))   /* Make compiler happy */
-static long L_ret = 0;      /**< Return address of the caller. */
+static long m_L_ret = 0;    /**< Return address of the caller. */
 
 /**
  * Register an exception handler for SIGSEGV and generate a new stack frame
@@ -240,7 +241,7 @@ static void preMain( const PSTACKFRAME psf )
         "pushl  %1              # pass argv                 \n\t"
         "pushl  %0              # pass argc                 \n\t"
         "# Now esp points to a new stack frame for main()   \n\t"
-        "jmp    *_L_ret         # return to the caller      \n\t"
+        "jmp    *_m_L_ret       # return to the caller      \n\t"
         : /* No outputs */
         : "g"( psf->argc ), "g"( psf->argv ), "g"( psf->envp )
     );
@@ -255,10 +256,10 @@ void __init_app( void )
 {
     __asm__ __volatile__(
         "pushl  4(%ebp)             # push a return address         \n\t"
-        "popl   _L_ret              # store it                      \n\t"
+        "popl   _m_L_ret            # store it                      \n\t"
         "call   _loadKLibcFuncs     # load kLIBC functions          \n\t"
         "call   _loadOS2Funcs       # load OS/2 functions           \n\t"
-        "call   *_klibc___init_app  # call __init_app() of kLIBC    \n\t"
+        "call   *_m_klibc___init_app# call __init_app() of kLIBC    \n\t"
         "# Now esp points to a stack frame for main()               \n\t"
         "pushl  %esp                # pass struct stackframe *      \n\t"
         "call   _preMain            # call preMain()                \n\t"
@@ -317,7 +318,7 @@ int _beginthread( void ( *start )( void *arg ), void *stack,
     pta->pArgList = arg_list;
 
     /* Call _beginthread() of kLIBC */
-    return ( *klibc__beginthread )( threadEntry, stack, stack_size, pta );
+    return ( *m_klibc__beginthread )( threadEntry, stack, stack_size, pta );
 }
 
 /**
@@ -366,7 +367,7 @@ APIRET APIENTRY DosFreeMem( PVOID pb )
     if( size != -1 )
         reallocDestMem( pb, ( char * )pb + size, true );
 
-    return os2_DosFreeMem( pb );
+    return m_os2_DosFreeMem( pb );
 }
 
 /**
@@ -407,7 +408,7 @@ void *copyOnWrite( const void *p, int cb )
     {
         free( pmlNewSrc );
         free( pmlNew );
-        os2_DosFreeMem( pAlias );
+        m_os2_DosFreeMem( pAlias );
 
         return NULL;
     }
@@ -417,18 +418,18 @@ void *copyOnWrite( const void *p, int cb )
     pmlNew->fl = 0;
     pmlNew->cb = cb;
     pmlNew->pSrc = p;
-    pmlNew->pmlNext = pmlStart;
+    pmlNew->pmlNext = m_pmlStart;
 
-    pmlStart = pmlNew;
+    m_pmlStart = pmlNew;
 
     /* Add a memory list for source memory */
     pmlNewSrc->pDest = ( void * )p;
     pmlNewSrc->fl = flSrc;
     pmlNewSrc->cb = cb;
     pmlNewSrc->pSrc = NULL;
-    pmlNewSrc->pmlNext = pmlStart;
+    pmlNewSrc->pmlNext = m_pmlStart;
 
-    pmlStart = pmlNewSrc;
+    m_pmlStart = pmlNewSrc;
 
     return pAlias;
 }
