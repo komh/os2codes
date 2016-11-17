@@ -93,8 +93,9 @@ static bool reallocDestMem( const void *pStart, const void *pEnd, bool flDest )
             {
                 /* No, source memory */
 
-                /* Just restore permission flag */
-                if( DosSetMem( pml->pDest, pml->cb, pml->fl ))
+                /* Just restore permission flag if having WRITE access */
+                if( !( pml->fl & PAG_WRITE )
+                    || DosSetMem( pml->pDest, pml->cb, pml->fl ))
                     break;
             }
 
