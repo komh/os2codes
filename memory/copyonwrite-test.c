@@ -133,6 +133,85 @@ static void test3( void )
     DosFreeMem( p1 );
 }
 
+static void test4( void )
+{
+    printf("***** Test4: Free source memory...\n");
+
+    static const char *p2Str = "6789067890";
+    static const char *p3Str = "1234567890";
+
+    char *p1;
+    char *p2;
+    char *p3;
+
+    DosAllocMem(( PPVOID )&p1, ALLOC_SIZE, fPERM | PAG_COMMIT );
+
+    strcpy( p1, p3Str);
+    p2 = copyOnWrite( p1, COPY_SIZE );
+    p3 = copyOnWrite( p2, COPY_SIZE );
+
+    printf("p1 = %p, p2 = %p, p3 = %p\n", p1, p2, p3 );
+    printf("p1 = [%s], p2 = [%s], p3 = [%s]\n", p1, p2, p3 );
+
+    printf("Freeing p1\n");
+    printf("DosFreeMem( p1 ) = %ld\n", DosFreeMem( p1 ));
+
+    printf("Copying %.5s to p2\n", p2 + 5 );
+    memcpy( p2, p2 + 5, 5 );
+
+    printf("p2 = [%s], p3 = [%s]\n", p2, p3 );
+
+    fprintf( stderr, "Test4: ");
+    if( memcmp( p2, p2Str, strlen( p2Str ))
+        || memcmp( p3, p3Str, strlen( p3Str )))
+        fprintf( stderr, "Failed\n");
+    else
+        fprintf( stderr, "Succeeded\n");
+
+    DosFreeMem( p3 );
+    DosFreeMem( p2 );
+}
+
+static void test5( void )
+{
+    printf("***** Test5: Free source memory which is destination memory "
+           "of other source memory...\n");
+
+    static const char *p1Str = "6789067890";
+    static const char *p3Str = "1234567890";
+
+    char *p1;
+    char *p2;
+    char *p3;
+
+    DosAllocMem(( PPVOID )&p1, ALLOC_SIZE, fPERM | PAG_COMMIT );
+
+    strcpy( p1, p3Str);
+    p2 = copyOnWrite( p1, COPY_SIZE );
+    p3 = copyOnWrite( p2, COPY_SIZE );
+
+    printf("p1 = %p, p2 = %p, p3 = %p\n", p1, p2, p3 );
+    printf("p1 = [%s], p2 = [%s], p3 = [%s]\n", p1, p2, p3 );
+
+    printf("Freeing p2\n");
+    printf("DosFreeMem( p2 ) = %ld\n", DosFreeMem( p2 ));
+
+    printf("Copying %.5s to p1\n", p1 + 5 );
+    memcpy( p1, p1 + 5, 5 );
+
+    printf("p1 = [%s], p3 = [%s]\n", p1, p3 );
+
+    fprintf( stderr, "Test5: ");
+    if( memcmp( p1, p1Str, strlen( p1Str ))
+        || memcmp( p3, p3Str, strlen( p3Str )))
+        fprintf( stderr, "Failed\n");
+    else
+        fprintf( stderr, "Succeeded\n");
+
+    DosFreeMem( p3 );
+    DosFreeMem( p1 );
+}
+
 static void worker( void *arg )
 {
     printf("Testing in tid = %d\n", _gettid());
@@ -140,6 +219,8 @@ static void worker( void *arg )
     test1();
     test2();
     test3();
+    test4();
+    test5();
 }
 
 int main( void )

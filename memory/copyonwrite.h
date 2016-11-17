@@ -25,8 +25,7 @@ extern "C" {
  * @param[in] p  Pointer to the source memory for copy-on-write.
  * @param[in] cb Bytes to copy-on-write.
  * @return Pointer to the destination memory for copy-on-write.
- * @remark When source memory is freed, destination memories are not
- *         reallocated.
+ * @todo Handle DosSetMem( PAG_DECOMMIT )
  */
 void *copyOnWrite( const void *p, int cb );
 

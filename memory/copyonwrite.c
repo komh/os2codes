@@ -39,6 +39,9 @@ typedef struct _MEMORYLIST
 /** Pointer to the start of memory list. */
 static PMEMORYLIST pmlStart = NULL;
 
+/** DosFreeMem() of DOSCALLS */
+static APIRET APIENTRY ( *os2_DosFreeMem )( PVOID ) = NULL;
+
 /**
  * Reallocate destination memory
  *
@@ -77,7 +80,7 @@ static bool reallocDestMem( const void *pStart, const void *pEnd, bool flDest )
                  * Reallocate memory at current address and copy from source
                  * memory
                  */
-                if( DosFreeMem( pml->pDest ))
+                if( os2_DosFreeMem( pml->pDest ))
                     break;
 
                 if( DosAllocMemEx( &pml->pDest, pml->cb,
@@ -153,7 +156,7 @@ static void ( *klibc___init_app )( void ) = NULL;
 
 /** _beginthread() of kLIBC. */
 static int ( *klibc__beginthread )
-    ( void ( * )( void * ), void *, unsigned, void * )= NULL;
+    ( void ( * )( void * ), void *, unsigned, void * ) = NULL;
 
 /**
  * Load functions of kLIBC
@@ -172,6 +175,22 @@ static void loadKLibcFuncs( void )
 
     if( DosQueryProcAddr( hmod, 0, "__beginthread",
                           ( PFN * )&klibc__beginthread ))
+        DosExit( EXIT_PROCESS, 255 );
+}
+
+/**
+ * Load functions of OS/2
+ */
+__attribute__(( unused )) /* Make compiler happy */
+static void loadOS2Funcs( void )
+{
+    char szFailed[ CCHMAXPATH ];
+    HMODULE hmod;
+
+    if( DosLoadModule( szFailed, sizeof( szFailed ), "doscalls", &hmod ))
+        DosExit( EXIT_PROCESS, 255 );
+
+    if( DosQueryProcAddr( hmod, 304, NULL, ( PFN * )&os2_DosFreeMem ))
         DosExit( EXIT_PROCESS, 255 );
 }
 
@@ -237,6 +256,7 @@ void __init_app( void )
         "pushl  4(%ebp)             # push a return address         \n\t"
         "popl   _L_ret              # store it                      \n\t"
         "call   _loadKLibcFuncs     # load kLIBC functions          \n\t"
+        "call   _loadOS2Funcs       # load OS/2 functions           \n\t"
         "call   *_klibc___init_app  # call __init_app() of kLIBC    \n\t"
         "# Now esp points to a stack frame for main()               \n\t"
         "pushl  %esp                # pass struct stackframe *      \n\t"
@@ -300,13 +320,61 @@ int _beginthread( void ( *start )( void *arg ), void *stack,
 }
 
 /**
+ * Calculate size of given memory object
+ *
+ * @param[in] p Base address of a memory object.
+ * @return Size of given memory object on success, otherwise -1.
+ * @remark Returned size is not match exactly with actual size of the given
+ *         memory object. Because a reserved memory, that is,
+ *         without PAG_COMMIT nor PAG_FREE, is included as well as
+ *         PAG_DECOMMIT.
+ */
+static int calcMemObjSize( const void *p )
+{
+    int size;
+
+    int pagesize = getpagesize();
+
+    ULONG cb = pagesize;
+    ULONG fl;
+
+    if( DosQueryMem( p, &cb, &fl ) || !( fl & PAG_BASE ))
+        return -1;
+
+    for( size = cb; ; size += cb )
+    {
+        cb = pagesize;
+
+        if( DosQueryMem(( char * )p + size, &cb, &fl ))
+            break;
+
+        if( fl & ( PAG_BASE | PAG_FREE ))
+            break;
+    }
+
+    return size;
+}
+
+/**
+ * Replacement of DosFreeMem() of DOSCALLS
+ */
+APIRET APIENTRY DosFreeMem( PVOID pb )
+{
+    int size = calcMemObjSize( pb );
+
+    if( size != -1 )
+        reallocDestMem( pb, ( char * )pb + size, true );
+
+    return os2_DosFreeMem( pb );
+}
+
+/**
  * Perform copy-on-write
  *
  * @param[in] p  Pointer to the source memory for copy-on-write.
  * @param[in] cb Bytes to copy-on-write.
  * @return Pointer to the destination memory for copy-on-write.
- * @remark When source memory is freed, destination memories are not
- *         reallocated.
+ * @todo Handle DosSetMem( PAG_DECOMMIT )
  */
 void *copyOnWrite( const void *p, int cb )
 {
@@ -338,7 +406,7 @@ void *copyOnWrite( const void *p, int cb )
     {
         free( pmlNewSrc );
         free( pmlNew );
-        DosFreeMem( pAlias );
+        os2_DosFreeMem( pAlias );
 
         return NULL;
     }
