@@ -22,7 +22,7 @@
 #define ALLOC_SIZE  8192
 #define COPY_SIZE  ( ALLOC_SIZE / 2 )
 
-void worker( void *arg )
+static void test1( void )
 {
     static const char *p1Str = "1234567890";
     static const char *p2Str = "1234512345";
@@ -30,7 +30,7 @@ void worker( void *arg )
     char *p1;
     char *p2;
 
-    printf("tid = %d\n", _gettid());
+    printf("***** Test1: Copy to destination memory...\n");
 
     DosAllocMem(( PPVOID )&p1, ALLOC_SIZE, fPERM | PAG_COMMIT );
 
@@ -45,11 +45,101 @@ void worker( void *arg )
 
     printf("p1 = [%s], p2 = [%s]\n", p1, p2 );
 
+    fprintf( stderr, "Test1: ");
     if( memcmp( p1, p1Str, strlen( p1Str ))
         || memcmp( p2, p2Str, strlen( p2Str )))
-        fprintf( stderr, "Test failed\n");
+        fprintf( stderr, "Failed\n");
     else
-        fprintf( stderr, "Test succeeded\n");
+        fprintf( stderr, "Succeeded\n");
+
+    DosFreeMem( p2 );
+    DosFreeMem( p1 );
+}
+
+static void test2( void )
+{
+    static const char *p1Str = "1234512345";
+    static const char *p2Str = "1234567890";
+
+    char *p1;
+    char *p2;
+
+    printf("***** Test2: Copy to source memory...\n");
+
+    DosAllocMem(( PPVOID )&p1, ALLOC_SIZE, fPERM | PAG_COMMIT );
+
+    strcpy( p1, p2Str);
+    p2 = copyOnWrite( p1, COPY_SIZE );
+
+    printf("p1 = %p, p2 = %p\n", p1, p2 );
+    printf("p1 = [%s], p2 = [%s]\n", p1, p2 );
+
+    printf("Copying %.5s to ( p1 + 5 )\n", p1Str );
+    memcpy( p1 + 5, p1Str, 5 );
+
+    printf("p1 = [%s], p2 = [%s]\n", p1, p2 );
+
+    fprintf( stderr, "Test2: ");
+    if( memcmp( p1, p1Str, strlen( p1Str ))
+        || memcmp( p2, p2Str, strlen( p2Str )))
+        fprintf( stderr, "Failed\n");
+    else
+        fprintf( stderr, "Succeeded\n");
+
+    DosFreeMem( p2 );
+    DosFreeMem( p1 );
+}
+
+static void test3( void )
+{
+    printf("***** Test3: Copy to source memory which is destination memory "
+           "of other source memory...\n");
+
+    static const char *p1Str = "6789067890";
+    static const char *p2Str = "1234512345";
+    static const char *p3Str = "1234567890";
+
+    char *p1;
+    char *p2;
+    char *p3;
+
+    DosAllocMem(( PPVOID )&p1, ALLOC_SIZE, fPERM | PAG_COMMIT );
+
+    strcpy( p1, p3Str);
+    p2 = copyOnWrite( p1, COPY_SIZE );
+    p3 = copyOnWrite( p2, COPY_SIZE );
+
+    printf("p1 = %p, p2 = %p, p3 = %p\n", p1, p2, p3 );
+    printf("p1 = [%s], p2 = [%s], p3 = [%s]\n", p1, p2, p3 );
+
+    printf("Copying %.5s to ( p2 + 5 )\n", p2Str );
+    memcpy( p2 + 5, p2Str, 5 );
+
+    printf("Copying %.5s to p1\n", p1 + 5 );
+    memcpy( p1, p1 + 5, 5 );
+
+    printf("p1 = [%s], p2 = [%s], p3 = [%s]\n", p1, p2, p3 );
+
+    fprintf( stderr, "Test3: ");
+    if( memcmp( p1, p1Str, strlen( p1Str ))
+        || memcmp( p2, p2Str, strlen( p2Str ))
+        || memcmp( p3, p3Str, strlen( p3Str )))
+        fprintf( stderr, "Failed\n");
+    else
+        fprintf( stderr, "Succeeded\n");
+
+    DosFreeMem( p3 );
+    DosFreeMem( p2 );
+    DosFreeMem( p1 );
+}
+
+static void worker( void *arg )
+{
+    printf("Testing in tid = %d\n", _gettid());
+
+    test1();
+    test2();
+    test3();
 }
 
 int main( void )

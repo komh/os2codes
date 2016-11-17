@@ -22,15 +22,11 @@ extern "C" {
 /**
  * Perform copy-on-write
  *
- * @param[in] p Pointer to the source memory for copy-on-write.
+ * @param[in] p  Pointer to the source memory for copy-on-write.
  * @param[in] cb Bytes to copy-on-write.
  * @return Pointer to the destination memory for copy-on-write.
- * @remark Currently, only writing to a destination memory directly connected
- *         to a source memory is supported. The following cases are not
- *         supported.
- *            1. Writing to a source memory
- *            2. Writing to the source memory which is a destination memory
- *               directly connected to other source memory
+ * @remark When source memory is freed, destination memories are not
+ *         reallocated.
  */
 void *copyOnWrite( const void *p, int cb );
 

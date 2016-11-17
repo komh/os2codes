@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "copyonwrite.h"
 
@@ -28,6 +29,7 @@
 typedef struct _MEMORYLIST
 {
     void *pDest;        /**< Destination address of copy-on-write. */
+    int fl;             /**< Permission flag of destination memory */
     int cb;             /**< Bytes. */
     const void *pSrc;   /**< Source address of copy-on-write. */
 
@@ -36,6 +38,90 @@ typedef struct _MEMORYLIST
 
 /** Pointer to the start of memory list. */
 static PMEMORYLIST pmlStart = NULL;
+
+/**
+ * Reallocate destination memory
+ *
+ * @param[in] pStart Start address of changed memory.
+ * @param[in] pEnd   End address of changed memory.
+ * @param[in] flDest true if finding destination memory
+ *                   false if finding source memory.
+ * @return true on success, false on error.
+ */
+static bool reallocDestMem( const void *pStart, const void *pEnd, bool flDest )
+{
+    const void *pAddrStart;
+    const void *pAddrEnd;
+    bool flProcessed = false;
+
+    PMEMORYLIST pml;
+    PMEMORYLIST *pmlNext = &pmlStart;
+
+    /* Find releated memory list and perform copy */
+    for( pml = pmlStart; pml; pml = *pmlNext )
+    {
+        pAddrStart = flDest ? pml->pDest : pml->pSrc;
+        pAddrEnd = ( char * )pAddrStart + pml->cb;
+
+        /* Changed memory is in maintained memory list ? */
+        if( pAddrStart < pEnd && pStart < pAddrEnd)
+        {
+            flProcessed = false;
+
+            /* Destination memory ? */
+            if( pml->pSrc )
+            {
+                /* Yes, destination memory */
+
+                /*
+                 * Reallocate memory at current address and copy from source
+                 * memory
+                 */
+                if( DosFreeMem( pml->pDest ))
+                    break;
+
+                if( DosAllocMemEx( &pml->pDest, pml->cb,
+                                   fPERM | PAG_COMMIT | OBJ_LOCATION ))
+                    break;
+
+                memcpy( pml->pDest, pml->pSrc, pml->cb );
+            }
+            else
+            {
+                /* No, source memory */
+
+                /* Just restore permission flag */
+                if( DosSetMem( pml->pDest, pml->cb, pml->fl ))
+                    break;
+            }
+
+            /* Remove current memory list */
+            *pmlNext = pml->pmlNext;
+
+            pAddrStart = pml->pDest;
+            pAddrEnd = (char * )pAddrStart + pml->cb;
+
+            free( pml );
+
+            /*
+             * Reallocate affectedd destination memory by changed memory,
+             * recursively.
+             */
+            if( !reallocDestMem( pAddrStart, pAddrEnd, false ))
+                break;
+
+            flProcessed = true;
+        }
+        else
+            pmlNext = &pml->pmlNext;
+    }
+
+    /*
+     * Also OK even if not processed, if iterated all memory list to find
+     * affected destination memory by changed memory.
+     */
+    return flProcessed || ( !pml && !flDest );
+}
 
 /**
  * Exception handler for SIGSEGV
@@ -49,50 +135,11 @@ static ULONG _System sigsegv( PEXCEPTIONREPORTRECORD p1,
     if( p1->ExceptionNum == XCPT_ACCESS_VIOLATION
         && ( p1->ExceptionInfo[ 0 ] & XCPT_WRITE_ACCESS ))
     {
-        void *pAddr = ( void * )p1->ExceptionInfo[ 1 ]; /* Exception address */
-        void *pAddrStart;
-        void *pAddrEnd;
-        int processed = 0;
+        /* Exception address */
+        void *pStart = ( void * )p1->ExceptionInfo[ 1 ];
 
-        PMEMORYLIST pml;
-        PMEMORYLIST *pmlNext = &pmlStart;
-
-        /* Find releated memory list and perform copy */
-        for( pml = pmlStart; pml; pml = *pmlNext )
-        {
-            pAddrStart = pml->pDest;
-            pAddrEnd = ( char * )pAddrStart + pml->cb;
-
-            if( pAddrStart <= pAddr && pAddr < pAddrEnd )
-            {
-                processed = 0;
-
-                /*
-                 * Reallocate memory at current address and copy from source
-                 * memory
-                 */
-                if( DosFreeMem( pAddrStart ))
-                    break;
-
-                if( DosAllocMemEx( &pAddrStart, pml->cb,
-                                   fPERM | PAG_COMMIT | OBJ_LOCATION ))
-                    break;
-
-                memcpy( pAddrStart, pml->pSrc, pml->cb );
-
-                /* Remove current memory list */
-                *pmlNext = pml->pmlNext;
-
-                free( pml );
-
-                processed = 1;
-            }
-            else
-                pmlNext = &pml->pmlNext;
-        }
-
-        if( processed )                     /* Processed ? */
-            return XCPT_CONTINUE_EXECUTION; /* Then continue to execution */
+        if( reallocDestMem( pStart, ( char * )pStart + 1, true ))
+            return XCPT_CONTINUE_EXECUTION; /* Continue to execution */
     }
 
     /* Not processed or other signal exception occurred */
@@ -255,23 +302,30 @@ int _beginthread( void ( *start )( void *arg ), void *stack,
 /**
  * Perform copy-on-write
  *
- * @param[in] p Pointer to the source memory for copy-on-write.
+ * @param[in] p  Pointer to the source memory for copy-on-write.
  * @param[in] cb Bytes to copy-on-write.
  * @return Pointer to the destination memory for copy-on-write.
- * @remark Currently, only writing to a destination memory directly connected
- *         to a source memory is supported. The following cases are not
- *         supported.
- *            1. Writing to a source memory
- *            2. Writing to the source memory which is a destination memory
- *               directly connected to other source memory
+ * @remark When source memory is freed, destination memories are not
+ *         reallocated.
  */
 void *copyOnWrite( const void *p, int cb )
 {
+    ULONG cbSrc = cb;
+    ULONG flSrc;
     PMEMORYLIST pmlNew;
+    PMEMORYLIST pmlNewSrc;
     void *pAlias;
 
     /* Page aligned ? */
     if(( intptr_t )p % getpagesize())
+        return NULL;
+
+    if( DosQueryMem( &p, &cbSrc, &flSrc ))
+        return NULL;
+
+    /* Prohibit WRITE access of source memory */
+    flSrc &= fPERM;
+    if( DosSetMem( p, cb, flSrc & ~PAG_WRITE ))
         return NULL;
 
     if( DosAliasMem( p, cb, &pAlias, 0 ))
@@ -279,8 +333,10 @@ void *copyOnWrite( const void *p, int cb )
 
     /* Prohibit WRITE access */
     if( DosSetMem( pAlias, cb, fPERM & ~PAG_WRITE )
-        || !( pmlNew = malloc( sizeof( *pmlNew ))))
+        || !( pmlNew = malloc( sizeof( *pmlNew )))
+        || !( pmlNewSrc = malloc( sizeof( *pmlNewSrc ))))
     {
+        free( pmlNewSrc );
         free( pmlNew );
         DosFreeMem( pAlias );
 
@@ -289,11 +345,21 @@ void *copyOnWrite( const void *p, int cb )
 
     /* Add a memory list */
     pmlNew->pDest = pAlias;
+    pmlNew->fl = 0;
     pmlNew->cb = cb;
     pmlNew->pSrc = p;
     pmlNew->pmlNext = pmlStart;
 
     pmlStart = pmlNew;
+
+    /* Add a memory list for source memory */
+    pmlNewSrc->pDest = ( void * )p;
+    pmlNewSrc->fl = flSrc;
+    pmlNewSrc->cb = cb;
+    pmlNewSrc->pSrc = NULL;
+    pmlNewSrc->pmlNext = pmlStart;
+
+    pmlStart = pmlNewSrc;
 
     return pAlias;
 }
