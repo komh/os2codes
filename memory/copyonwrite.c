@@ -365,6 +365,9 @@ static int calcMemObjSize( const void *p )
 
 /**
  * Replacement of DosFreeMem() of DOSCALLS
+ *
+ * @remark If given @a pb is the first page( PAG_BASE), reallocate affected
+ *         memories unconditionally regardless of success of DosFreeMem().
  */
 APIRET APIENTRY DosFreeMem( PVOID pb )
 {
