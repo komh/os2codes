@@ -25,7 +25,16 @@ extern "C" {
  * @param[in] p  Pointer to the source memory for copy-on-write.
  * @param[in] cb Bytes to copy-on-write.
  * @return Pointer to the destination memory for copy-on-write.
- * @todo Handle DosSetMem( PAG_DECOMMIT )
+ * @bug If permission of memory is changed, the change is not applied.
+ *      For example,
+ *        1. allocate a memory with PAG_WRITE
+ *        2. perform copyOnWrite() on it
+ *        3. remove PAG_WRITE of it with DosSetMem()
+ *        4. try to write to it
+ *        5. this should cause SIGSEGV.
+ *        6. however, its PAG_WRITE is restored in sigsegv()
+ *        7. as a result, SIGSEGV does not occur
+ *        8. this is not expected behavior
  */
 void *copyOnWrite( const void *p, int cb );
 

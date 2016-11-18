@@ -212,6 +212,89 @@ static void test5( void )
     DosFreeMem( p1 );
 }
 
+static void test6( void )
+{
+    printf("***** Test6: Decommit source memory...\n");
+
+    static const char *p2Str = "6789067890";
+    static const char *p3Str = "1234567890";
+
+    char *p1;
+    char *p2;
+    char *p3;
+
+    DosAllocMem(( PPVOID )&p1, ALLOC_SIZE, fPERM | PAG_COMMIT );
+
+    strcpy( p1, p3Str);
+    p2 = copyOnWrite( p1, COPY_SIZE );
+    p3 = copyOnWrite( p2, COPY_SIZE );
+
+    printf("p1 = %p, p2 = %p, p3 = %p\n", p1, p2, p3 );
+    printf("p1 = [%s], p2 = [%s], p3 = [%s]\n", p1, p2, p3 );
+
+    printf("Decommiting p1\n");
+    printf("DosSetMem( p1 ) = %ld\n",
+           DosSetMem( p1, ALLOC_SIZE, PAG_DECOMMIT ));
+
+    printf("Copying %.5s to p2\n", p2 + 5 );
+    memcpy( p2, p2 + 5, 5 );
+
+    printf("p2 = [%s], p3 = [%s]\n", p2, p3 );
+
+    fprintf( stderr, "Test6: ");
+    if( memcmp( p2, p2Str, strlen( p2Str ))
+        || memcmp( p3, p3Str, strlen( p3Str )))
+        fprintf( stderr, "Failed\n");
+    else
+        fprintf( stderr, "Succeeded\n");
+
+    DosFreeMem( p3 );
+    DosFreeMem( p2 );
+    DosFreeMem( p1 );
+}
+
+static void test7( void )
+{
+    printf("***** Test7: Decommit source memory which is destination memory "
+           "of other source memory...\n");
+
+    static const char *p1Str = "6789067890";
+    static const char *p3Str = "1234567890";
+
+    char *p1;
+    char *p2;
+    char *p3;
+
+    DosAllocMem(( PPVOID )&p1, ALLOC_SIZE, fPERM | PAG_COMMIT );
+
+    strcpy( p1, p3Str);
+    p2 = copyOnWrite( p1, COPY_SIZE );
+    p3 = copyOnWrite( p2, COPY_SIZE );
+
+    printf("p1 = %p, p2 = %p, p3 = %p\n", p1, p2, p3 );
+    printf("p1 = [%s], p2 = [%s], p3 = [%s]\n", p1, p2, p3 );
+
+    printf("Decommiting p2\n");
+    printf("DosSetMem( p2 ) = %ld\n",
+           DosSetMem( p2, COPY_SIZE, PAG_DECOMMIT ));
+
+    printf("Copying %.5s to p1\n", p1 + 5 );
+    memcpy( p1, p1 + 5, 5 );
+
+    printf("p1 = [%s], p3 = [%s]\n", p1, p3 );
+
+    fprintf( stderr, "Test7: ");
+    if( memcmp( p1, p1Str, strlen( p1Str ))
+        || memcmp( p3, p3Str, strlen( p3Str )))
+        fprintf( stderr, "Failed\n");
+    else
+        fprintf( stderr, "Succeeded\n");
+
+    DosFreeMem( p3 );
+    DosFreeMem( p2 );
+    DosFreeMem( p1 );
+}
+
 static void worker( void *arg )
 {
     printf("Testing in tid = %d\n", _gettid());
@@ -221,6 +304,8 @@ static void worker( void *arg )
     test3();
     test4();
     test5();
+    test6();
+    test7();
 }
 
 int main( void )

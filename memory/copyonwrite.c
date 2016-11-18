@@ -42,6 +42,9 @@ static PMEMORYLIST m_pmlStart = NULL;
 /** DosFreeMem() of DOSCALLS */
 static APIRET APIENTRY ( *m_os2_DosFreeMem )( PVOID ) = NULL;
 
+/** DosSetMem() of DOSCALLS */
+static APIRET APIENTRY ( *m_os2_DosSetMem )( CPVOID, ULONG, ULONG ) = NULL;
+
 /**
  * Reallocate destination memory
  *
@@ -95,7 +98,7 @@ static bool reallocDestMem( const void *pStart, const void *pEnd, bool flDest )
 
                 /* Just restore permission flag if having WRITE access */
                 if( !( pml->fl & PAG_WRITE )
-                    || DosSetMem( pml->pDest, pml->cb, pml->fl ))
+                    || m_os2_DosSetMem( pml->pDest, pml->cb, pml->fl ))
                     break;
             }
 
@@ -193,6 +196,9 @@ static void loadOS2Funcs( void )
         DosExit( EXIT_PROCESS, 255 );
 
     if( DosQueryProcAddr( hmod, 304, NULL, ( PFN * )&m_os2_DosFreeMem ))
+        DosExit( EXIT_PROCESS, 255 );
+
+    if( DosQueryProcAddr( hmod, 305, NULL, ( PFN * )&m_os2_DosSetMem ))
         DosExit( EXIT_PROCESS, 255 );
 }
 
@@ -371,12 +377,43 @@ APIRET APIENTRY DosFreeMem( PVOID pb )
 }
 
 /**
+ * Replacement of DosSetMem() of DOSCALLS
+ *
+ * @remark If PAG_DECOMMIT is given, reallocate affected memories
+ *         unconditionally regardless of success of DosSetMem( PAG_DECOMMIT ).
+ */
+APIRET APIENTRY DosSetMem( CPVOID pb, ULONG cb, ULONG fl )
+{
+    if( fl & PAG_DECOMMIT )
+    {
+        int pagesize_1 = getpagesize() - 1;
+
+        /* Align with pagesize */
+        void *pStart = ( void * )(( intptr_t )pb & ~pagesize_1 );
+        void *pEnd = ( char * )pStart + (( cb + pagesize_1 ) & ~pagesize_1 );
+
+        reallocDestMem( pStart, pEnd, true );
+    }
+
+    return m_os2_DosSetMem( pb, cb, fl );
+}
+
+/**
  * Perform copy-on-write
  *
  * @param[in] p  Pointer to the source memory for copy-on-write.
  * @param[in] cb Bytes to copy-on-write.
  * @return Pointer to the destination memory for copy-on-write.
- * @todo Handle DosSetMem( PAG_DECOMMIT )
+ * @bug If permission of memory is changed, the change is not applied.
+ *      For example,
+ *        1. allocate a memory with PAG_WRITE
+ *        2. perform copyOnWrite() on it
+ *        3. remove PAG_WRITE of it with DosSetMem()
+ *        4. try to write to it
+ *        5. this should cause SIGSEGV.
+ *        6. however, its PAG_WRITE is restored in sigsegv()
+ *        7. as a result, SIGSEGV does not occur
+ *        8. this is not expected behavior
  */
 void *copyOnWrite( const void *p, int cb )
 {
@@ -395,14 +432,14 @@ void *copyOnWrite( const void *p, int cb )
 
     /* Prohibit WRITE access of source memory */
     flSrc &= fPERM;
-    if( DosSetMem( p, cb, flSrc & ~PAG_WRITE ))
+    if( m_os2_DosSetMem( p, cb, flSrc & ~PAG_WRITE ))
         return NULL;
 
     if( DosAliasMem( p, cb, &pAlias, 0 ))
         return NULL;
 
     /* Prohibit WRITE access */
-    if( DosSetMem( pAlias, cb, fPERM & ~PAG_WRITE )
+    if( m_os2_DosSetMem( pAlias, cb, fPERM & ~PAG_WRITE )
         || !( pmlNew = malloc( sizeof( *pmlNew )))
         || !( pmlNewSrc = malloc( sizeof( *pmlNewSrc ))))
     {
