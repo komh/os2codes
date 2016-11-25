@@ -28,21 +28,19 @@ int gethwaddr( const char *ifname, HWADDR hwaddr )
     int s;
     int count;
     int i;
+    int ret = -1;
 
     s = socket( PF_INET, SOCK_RAW, 0 );
     if( s == -1 )
-        return -1;
+        return ret;
 
     memset( iflist, 0, sizeof( iflist ));
 
     ifconf.ifc_len = sizeof( iflist );
     ifconf.ifc_req = iflist;
-    if( ioctl( s, SIOCGIFCONF, &ifconf ) < 0 )
-    {
-        close( s );
-
-        return -1;
-    }
+    ret = ioctl( s, SIOCGIFCONF, &ifconf );
+    if( ret == -1)
+        goto out;
 
     count = ifconf.ifc_len / sizeof( struct ifreq );
     for( i = 0; i < count; i++ )
@@ -60,6 +58,11 @@ int gethwaddr( const char *ifname, HWADDR hwaddr )
         }
     }
 
-    return i == count /* not found ? */ ? -1 : 0;
+    ret = i == count /* not found ? */ ? -1 : 0;
+
+out:
+    close( s );
+
+    return ret;
 }
 
