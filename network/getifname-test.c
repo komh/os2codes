@@ -30,7 +30,7 @@ int main( void )
 
     s = socket( PF_INET, SOCK_RAW, 0 );
 
-    ioctl( s, SIOSTATIF42, &ifmib, sizeof( ifmib ));
+    os2_ioctl( s, SIOSTATIF42, &ifmib, sizeof( ifmib ));
 
     for( i = 0, j = 0; i < IFMIB_ENTRIES && j < ifmib.ifNumber; i++ )
     {
