@@ -462,6 +462,19 @@ void *copyOnWrite( const void *p, int cb )
 
     m_pmlStart = pmlNew;
 
+    /* Check if the source memory is in registered destination memory */
+    for( pmlNew = m_pmlStart; pmlNew; pmlNew = pmlNew->pmlNext )
+    {
+        if( pmlNew->pSrc
+            && p >= pmlNew->pDest
+            && ( char * )p < ( char * )pmlNew->pDest + cb )
+        {
+            /* Destination memory is always writable */
+            flSrc |= PAG_WRITE;
+            break;
+        }
+    }
+
     /* Add a memory list for source memory */
     pmlNewSrc->pDest = ( void * )p;
     pmlNewSrc->fl = flSrc;
