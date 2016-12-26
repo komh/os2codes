@@ -430,7 +430,7 @@ void *copyOnWrite( const void *p, int cb )
     if(( intptr_t )p % getpagesize())
         return NULL;
 
-    if( DosQueryMem( &p, &cbSrc, &flSrc ))
+    if( DosQueryMem( p, &cbSrc, &flSrc ))
         return NULL;
 
     /* Prohibit WRITE access of source memory */
