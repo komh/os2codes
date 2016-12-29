@@ -98,7 +98,7 @@ int cdioClose( HCDIO hcdio );
  * @param[in] mode SCSI modes. See @ref cdioScsiModes
  * @param[in] pCmdBuf Command buffer
  * @param[in] cbCmdBuf Size of command buffer in bytes
- * @param pDataBuf Data buffer
+ * @param[in,out] pDataBuf Data buffer
  * @param[in] cbDataBuf Size of dat buffer in bytes
  * @return 0(NO_ERROR) on success, OS/2 errors on error
  */
