@@ -124,7 +124,7 @@ int fat32ioWriteSectors( HFAT32IO hfat32io, uint32_t iSector,
     cbParam = sizeof( wsd );
     cbData  = wsd.nSectors * SECTOR_SIZE;
 
-    if ( DosDevIOCtl(( HFILE )hfat32io, IOCTL_FAT32, FAT32_READSECTOR,
+    if ( DosDevIOCtl(( HFILE )hfat32io, IOCTL_FAT32, FAT32_WRITESECTOR,
                      &wsd, cbParam, &cbParam,
                      pSectors, cbData, &cbData ))
         return -1;
