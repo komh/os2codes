@@ -536,7 +536,6 @@ static MRESULT WmPaint( HWND hwnd, MPARAM mp1, MPARAM mp2 )
 
     POINTL ptl;
     POINTL ptlConv;
-    LONG   lOldLineType;
 
     hps = WinBeginPaint( hwnd, NULLHANDLE, &rcl);
 
@@ -605,7 +604,7 @@ static MRESULT WmPaint( HWND hwnd, MPARAM mp1, MPARAM mp2 )
         /* Draw a under line to mark a conversion string */
         ptlConv.x += CalcStrWidth( hwnd, pIm32Data->szConv,
                                    strlen( pIm32Data->szConv )) * 2;
-        lOldLineType = GpiQueryLineType( hps );
+        GpiQueryLineType( hps );
         GpiSetLineType( hps, LINETYPE_DOT );
         GpiLine( hps, &ptlConv );
 

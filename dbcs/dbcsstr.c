@@ -27,23 +27,23 @@ __attribute__((constructor))    /* Call at startup. */
 static void initCharLen( void )
 {
     COUNTRYCODE cc = { 0, }; /* Default system language and current code page */
-    UCHAR       auchDBCSLeadBytes[ 12 ]; /* A vector for lead-bytes range */
+    CHAR        achDBCSLeadBytes[ 12 ]; /* A vector for lead-bytes range */
     int         i, j;
 
     /* Assume SBCS by default */
     memset( m_achCharLen, 1, sizeof( m_achCharLen ));
-    memset( auchDBCSLeadBytes, 0, sizeof( auchDBCSLeadBytes ));
+    memset( achDBCSLeadBytes, 0, sizeof( achDBCSLeadBytes ));
 
-    DosQueryDBCSEnv( sizeof( auchDBCSLeadBytes ), &cc, auchDBCSLeadBytes );
+    DosQueryDBCSEnv( sizeof( achDBCSLeadBytes ), &cc, achDBCSLeadBytes );
 
     /* Determine if DBCS is enabled. */
-    m_fIsEnabled = auchDBCSLeadBytes[ 0 ] || auchDBCSLeadBytes[ 1 ];
+    m_fIsEnabled = achDBCSLeadBytes[ 0 ] || achDBCSLeadBytes[ 1 ];
 
     /* Lead-bytes ranges end with two zero byte */
-    for( i = 0; auchDBCSLeadBytes[ i ] || auchDBCSLeadBytes[ i + 1 ]; i += 2 )
+    for( i = 0; achDBCSLeadBytes[ i ] || achDBCSLeadBytes[ i + 1 ]; i += 2 )
     {
         /* If a DBCS character, set its character size to 2. */
-        for( j = auchDBCSLeadBytes[ i ]; j <= auchDBCSLeadBytes[ i + 1 ]; j++ )
+        for( j = achDBCSLeadBytes[ i ]; j <= achDBCSLeadBytes[ i + 1 ]; j++ )
             m_achCharLen[ j ] = 2;
     }
 }

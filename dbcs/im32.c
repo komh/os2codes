@@ -338,7 +338,7 @@ static PFN_IMBROADCASTDATA pfnImBroadcastData = NULL;
 
 CONSTRUCTOR int im32Init( VOID )   /* Called at startup if supported */
 {
-    UCHAR szErrorName[ 256 ];
+    CHAR szErrorName[ 256 ];
 
     if( fIM32Inited )
         return TRUE;
