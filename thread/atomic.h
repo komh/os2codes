@@ -1,5 +1,5 @@
 /*
- * Atomic functions test program
+ * Atomic functions
  *
  * Copyright (C) 2021 KO Myung-Hun <komh@chollian.net>
  *
