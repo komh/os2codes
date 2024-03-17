@@ -63,20 +63,6 @@
     %endif
 %endmacro
 
-%macro SECTION_CONST 0-1 16
-    %ifidn __OUTPUT_FORMAT__,obj
-        ; FLAT property is not necessary.
-        section CONST32 public align=%1 use32 class=CONST
-
-        ; Segments of CONST class should be included in DGROUP.
-        ; group DGROUP CONST32
-    %elifidn __OUTPUT_FORMAT__,aout
-        section .text
-    %else
-        %error Unsupported output format!
-    %endif
-%endmacro
-
 %macro SECTION_BSS 0-1 16
     %ifidn __OUTPUT_FORMAT__,obj
         ; FLAT property is not necessary.
