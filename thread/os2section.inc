@@ -55,7 +55,7 @@
         section DATA32 public align=%1 use32 class=DATA
 
         ; Segments of DATA class should be included in DGROUP.
-        group DGROUP DATA32
+        ; group DGROUP DATA32
     %elifidn __OUTPUT_FORMAT__,aout
         section .data
     %else
@@ -69,7 +69,7 @@
         section CONST32 public align=%1 use32 class=CONST
 
         ; Segments of CONST class should be included in DGROUP.
-        group DGROUP CONST32
+        ; group DGROUP CONST32
     %elifidn __OUTPUT_FORMAT__,aout
         section .text
     %else
@@ -83,7 +83,7 @@
         section BSS32 public align=%1 use32 class=BSS
 
         ; Segments of BSS class should be included in DGROUP.
-        group DGROUP BSS32
+        ; group DGROUP BSS32
     %elifidn __OUTPUT_FORMAT__,aout
         section .bss
     %else
