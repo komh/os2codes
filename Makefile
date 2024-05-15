@@ -23,7 +23,7 @@ CXXFLAGS := -Wall -DOS2EMX_PLAIN_CHAR -funsigned-char
 LDFLAGS  :=
 LDLIBS   :=
 
-DIRS := misc time signal system dbcs memory process network thread io
+DIRS := misc time signal system dbcs memory process network thread io algorithm
 SRCS := $(foreach d,$(DIRS),$(wildcard $(d)/*.c) $(wildcard $(d)/*.cpp) $(wildcard $(d)/*.asm))
 DEPS := $(foreach s,$(SRCS),$(s:$(suffix $(s))=.d))
 OBJS := $(DEPS:.d=.o)
