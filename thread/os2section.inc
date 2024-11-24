@@ -55,6 +55,18 @@
     %endif
 %endmacro
 
+%macro SECTION_RODATA 0-1 16
+    %ifidn __OUTPUT_FORMAT__,obj
+        section CONST32 public align=%1 use32 class=CONST flat
+
+        ; Segments of CONST class are not in DGROUP.
+    %elifidn __OUTPUT_FORMAT__,aout
+        section .text
+    %else
+        %error Unsupported output format!
+    %endif
+%endmacro
+
 %macro SECTION_DATA 0-1 16
     %ifidn __OUTPUT_FORMAT__,obj
         section DATA32 public align=%1 use32 class=DATA flat
