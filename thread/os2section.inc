@@ -1,7 +1,7 @@
 ;
 ; OS/2 section macros
 ;
-; Copyright (C) 2021 KO Myung-Hun <komh@chollian.net>
+; Copyright (C) 2021-2024 KO Myung-Hun <komh78@gmail.com>
 ;
 ; This program is free software. It comes without any warranty, to
 ; the extent permitted by applicable law. You can redistribute it
@@ -36,10 +36,16 @@
         ; not be defined.
         ; And it's not important whether or not using FLAT property.
         ; In any case, FLAT property is not necessary. Just omit it.
-        section TEXT32 public align=%1 use32 class=CODE
+        ;          ********** THE ABOVE is PARTIALLY true **********
+        ; The above is true only when declaring a segment which is already
+        ; declared by external module such as kLIBC startup codes and has FLAT
+        ; property. Therefore FLAT property should be specified as NASM manual
+        ; says.
+        section TEXT32 public align=%1 use32 class=CODE flat
 
         %ifdef __KLIBC__
             ; On kLIBC, segments of CODE class should be included in CGROUP.
+            ; NOTE that group directive does not allow to define a group twice.
             ; group CGROUP TEXT32
         %endif
     %elifidn __OUTPUT_FORMAT__,aout
@@ -51,10 +57,10 @@
 
 %macro SECTION_DATA 0-1 16
     %ifidn __OUTPUT_FORMAT__,obj
-        ; FLAT property is not necessary.
-        section DATA32 public align=%1 use32 class=DATA
+        section DATA32 public align=%1 use32 class=DATA flat
 
         ; Segments of DATA class should be included in DGROUP.
+        ; NOTE that group directive does not allow to define a group twice.
         ; group DGROUP DATA32
     %elifidn __OUTPUT_FORMAT__,aout
         section .data
@@ -65,10 +71,10 @@
 
 %macro SECTION_BSS 0-1 16
     %ifidn __OUTPUT_FORMAT__,obj
-        ; FLAT property is not necessary.
-        section BSS32 public align=%1 use32 class=BSS
+        section BSS32 public align=%1 use32 class=BSS flat
 
         ; Segments of BSS class should be included in DGROUP.
+        ; NOTE that group directive does not allow to define a group twice.
         ; group DGROUP BSS32
     %elifidn __OUTPUT_FORMAT__,aout
         section .bss
