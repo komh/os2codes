@@ -10,10 +10,12 @@
  * http://www.wtfpl.net/ for more details.
  */
 
-#define INCL_DOSMODULEMGR
+#define INCL_DOS
 #include <os2.h>
 #include <os2im.h>
 #include <os2ime.h>
+
+#include <sys/builtin.h>
 
 #include "im32.h"
 
@@ -203,6 +205,8 @@ typedef APIRET ( APIENTRY *PFN_IMBROADCASTDATA)
 
 static BOOL fIM32Inited = FALSE;
 
+static ULONG ulIM32InitCount = 0;
+
 static HMODULE hIM32Mod = NULLHANDLE;
 
 static PFN_IMASSOCIATEINSTANCE pfnImAssociateInstance = NULL;
@@ -336,18 +340,43 @@ static PFN_IMBROADCASTDATA pfnImBroadcastData = NULL;
 #define DESTRUCTOR
 #endif
 
+static inline void lock( int *pLock )
+{
+    while( __lxchg( pLock, 1 ) == 1 )
+        DosSleep( 1 );  /* Wait */
+}
+
+static inline void unlock( int *pLock )
+{
+    __lxchg( pLock, 0 );
+}
+
 CONSTRUCTOR int im32Init( VOID )   /* Called at startup if supported */
 {
+    static int mtx = 0;
+
     CHAR szErrorName[ 256 ];
 
+    lock( &mtx );
+
     if( fIM32Inited )
+    {
+        ulIM32InitCount++;
+
+        unlock( &mtx );
+
         return TRUE;
+    }
 
     hIM32Mod = NULLHANDLE;
 
     if( DosLoadModule( szErrorName, sizeof( szErrorName ), "os2im",
                        &hIM32Mod ))
+    {
+        unlock( &mtx );
+
         return fIM32Inited;
+    }
 
     if( DOSQUERYPROCADDR( 101, &pfnImAssociateInstance ))
         goto error_exit;
@@ -527,23 +556,32 @@ CONSTRUCTOR int im32Init( VOID )   /* Called at startup if supported */
         goto error_exit;
 
     fIM32Inited = TRUE;
+    ulIM32InitCount++;
 
 error_exit:
 
     if( hIM32Mod && !fIM32Inited )
         DosFreeModule( hIM32Mod );
 
+    unlock( &mtx );
+
     return fIM32Inited;
 }
 
 DESTRUCTOR void im32Term( void )    /* Called at exit if supported */
 {
-    if( !fIM32Inited )
-        return;
+    static int mtx = 0;
 
-    DosFreeModule( hIM32Mod );
+    lock( &mtx );
 
-    fIM32Inited = FALSE;
+    if( fIM32Inited && --ulIM32InitCount == 0 )
+    {
+        DosFreeModule( hIM32Mod );
+
+        fIM32Inited = FALSE;
+    }
+
+    unlock( &mtx );
 }
 
 int im32Inited( void )
